@@ -135,11 +135,8 @@ npm run lint         # Run ESLint
 npm run build
 ```
 
-### Deploy Options
+
 - **Vercel**: Connect your GitHub repository
-- **Netlify**: Drag and drop the `dist` folder
-- **GitHub Pages**: Use GitHub Actions for deployment
-- **Any static hosting**: Upload the `dist` folder contents
 
 ## 🔐 Environment Variables
 
@@ -180,6 +177,7 @@ If you encounter any issues or have questions:
 - ✅ Optimized project structure
 - ✅ Updated dependencies
 - ✅ Improved documentation
+- ✅ Fixed QR code routing for mobile
 
 ---
 
