@@ -8,6 +8,18 @@ const TablePage: React.FC = () => {
 
   useEffect(() => {
     if (tableId) {
+      // Validate UUID format first
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(tableId)) {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'Invalid table ID format.'
+        });
+        navigate('/', { replace: true });
+        return;
+      }
+
       // Redirect to the main flow with the table UUID
       // This will trigger the QR scanner logic to determine menu vs bill mode
       navigate(`/?tableId=${tableId}`, { replace: true });
