@@ -10,7 +10,6 @@ import AdminPanel from "./pages/AdminPanel";
 import AuthPage from "./pages/AuthPage";
 import TablePage from "./pages/TablePage";
 import QRCodeAdminPage from "./pages/QRCodeAdminPage";
-import TestPage from "./pages/TestPage";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { useEffect, useState } from "react";
 
@@ -68,7 +67,6 @@ const App = () => {
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/table/:tableId" element={<TablePage />} />
               <Route path="/admin/qrcodes" element={<QRCodeAdminPage />} />
-              <Route path="/test" element={<TestPage />} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
