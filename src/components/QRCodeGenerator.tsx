@@ -15,7 +15,8 @@ const QRCodeGenerator = ({ tableUuid, tableNumber }: QRCodeGeneratorProps) => {
   useEffect(() => {
     const generateQR = async () => {
       try {
-        const url = await QRCode.toDataURL(`${window.location.origin}/table/${tableUuid}`, {
+        const baseUrl = import.meta.env.VITE_APP_URL || window.location.origin;
+        const url = await QRCode.toDataURL(`${baseUrl}/table/${tableUuid}`, {
           width: 300,
           margin: 2,
           color: {
