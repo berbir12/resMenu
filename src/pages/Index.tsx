@@ -30,9 +30,41 @@ function RestaurantApp() {
   // Handle URL parameter for direct table access
   useEffect(() => {
     const urlTableId = searchParams.get('tableId');
+    const urlMode = searchParams.get('mode') as 'menu' | 'bill' | null;
+    
     if (urlTableId && !tableId) {
-      // Determine mode and handle table access from URL
-      determineModeAndHandleTable(urlTableId);
+      if (urlMode) {
+        // If mode is provided in URL (from QR code), use it directly
+        console.log('Using mode from URL:', urlMode);
+        setTableId(urlTableId);
+        setMode(urlMode);
+        
+        // Fetch table data for display
+        const fetchTableData = async () => {
+          try {
+            const { data: tableInfo, error } = await supabase
+              .from('restaurant_tables')
+              .select('id, table_number')
+              .eq('id', urlTableId)
+              .single();
+            
+            if (!error && tableInfo) {
+              setTableData(tableInfo);
+              toast({
+                title: "Table Accessed",
+                description: `Table ${tableInfo.table_number} - ${urlMode === 'menu' ? 'Menu Mode' : 'Bill Mode'}`,
+              });
+            }
+          } catch (err) {
+            console.error('Error fetching table data:', err);
+          }
+        };
+        
+        fetchTableData();
+      } else {
+        // If no mode provided (manual input), determine mode
+        determineModeAndHandleTable(urlTableId);
+      }
     }
   }, [searchParams, tableId]);
 
