@@ -9,10 +9,10 @@ export interface OrderItem {
 
 interface RestaurantContextType {
   tableId: string | null;
-  mode: 'menu' | 'bill' | null;
+  mode: 'menu' | 'tracker' | 'bill' | null;
   orderItems: OrderItem[];
   setTableId: (id: string) => void;
-  setMode: (mode: 'menu' | 'bill') => void;
+  setMode: (mode: 'menu' | 'tracker' | 'bill') => void;
   updateOrder: (items: OrderItem[]) => void;
   getBillItems: () => OrderItem[];
   resetSession: () => void;
@@ -31,7 +31,7 @@ const MENU_ITEMS = {
 
 export function RestaurantProvider({ children }: { children: ReactNode }) {
   const [tableId, setTableId] = useState<string | null>(null);
-  const [mode, setMode] = useState<'menu' | 'bill' | null>(null);
+  const [mode, setMode] = useState<'menu' | 'tracker' | 'bill' | null>(null);
   const [orderItems, setOrderItems] = useState<OrderItem[]>([]);
 
   const updateOrder = (items: OrderItem[]) => {

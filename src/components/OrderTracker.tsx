@@ -88,12 +88,19 @@ const OrderTracker = ({ tableId, orderId, onGoBack, onOrderComplete }: OrderTrac
 
       setOrder(data);
       
-      // If order is completed, trigger completion callback
-      if (data.status === 'completed') {
-        setTimeout(() => {
-          onOrderComplete();
-        }, 3000);
-      }
+             // If order is completed, trigger completion callback
+       if (data.status === 'completed') {
+         setTimeout(() => {
+           onOrderComplete();
+         }, 3000);
+       }
+       
+       // If order is served, redirect to bill mode after a delay
+       if (data.status === 'served') {
+         setTimeout(() => {
+           onOrderComplete();
+         }, 2000);
+       }
     } catch (err) {
       console.error('Error fetching order:', err);
     } finally {

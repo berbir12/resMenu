@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface QRCodeScannerProps {
-  onTableScanned: (tableUuid: string, mode: 'menu' | 'bill') => void;
+  onTableScanned: (tableUuid: string, mode: 'menu' | 'tracker' | 'bill', orderId?: string) => void;
 }
 
 export function QRCodeScanner({ onTableScanned }: QRCodeScannerProps) {
@@ -17,7 +17,7 @@ export function QRCodeScanner({ onTableScanned }: QRCodeScannerProps) {
   const { toast } = useToast();
 
   // Function to determine the appropriate mode based on order status
-  const determineMode = async (tableUuid: string): Promise<'menu' | 'bill'> => {
+  const determineMode = async (tableUuid: string): Promise<{ mode: 'menu' | 'tracker' | 'bill', orderId?: string }> => {
     try {
       console.log('Determining mode for table UUID:', tableUuid);
       
@@ -65,7 +65,7 @@ export function QRCodeScanner({ onTableScanned }: QRCodeScannerProps) {
       
       console.log('Active orders (filtered):', activeOrders);
       
-      // If there's an active order with status 'served', show bill
+      // Determine mode based on order status
       if (activeOrders.length > 0) {
         const latestOrder = activeOrders[0];
         console.log('Latest order status:', latestOrder.status);
@@ -78,17 +78,20 @@ export function QRCodeScanner({ onTableScanned }: QRCodeScannerProps) {
         
         if (latestOrder.status === 'served') {
           console.log('Returning bill mode - order is served');
-          return 'bill';
+          return { mode: 'bill' };
+        } else {
+          console.log('Returning tracker mode - order is active but not served');
+          return { mode: 'tracker', orderId: latestOrder.id };
         }
       }
       
-      console.log('Returning menu mode - no served orders found');
-      // Default to menu mode (no active orders or order not served yet)
-      return 'menu';
+      console.log('Returning menu mode - no active orders found');
+      // Default to menu mode (no active orders)
+      return { mode: 'menu' };
     } catch (error) {
       console.error('Error determining mode:', error);
       // Default to menu mode on error
-      return 'menu';
+      return { mode: 'menu' };
     }
   };
 
@@ -105,12 +108,18 @@ export function QRCodeScanner({ onTableScanned }: QRCodeScannerProps) {
 
     setScanning(true);
     try {
-      const mode = await determineMode(tableUuid);
-      onTableScanned(tableUuid, mode);
+      const result = await determineMode(tableUuid);
+      onTableScanned(tableUuid, result.mode, result.orderId);
+      
+      const modeLabels = {
+        menu: 'Menu Mode',
+        tracker: 'Order Tracker',
+        bill: 'Bill Mode'
+      };
       
       toast({
         title: "QR Code Scanned",
-        description: `Table UUID: ${tableUuid.slice(0, 8)}... - ${mode === 'menu' ? 'Menu Mode' : 'Bill Mode'}`,
+        description: `Table UUID: ${tableUuid.slice(0, 8)}... - ${modeLabels[result.mode]}`,
       });
     } catch (error) {
       toast({

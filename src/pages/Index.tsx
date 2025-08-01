@@ -33,14 +33,21 @@ function RestaurantApp() {
   // Handle URL parameter for direct table access
   useEffect(() => {
     const urlTableId = searchParams.get('tableId');
-    const urlMode = searchParams.get('mode') as 'menu' | 'bill' | null;
+    const urlMode = searchParams.get('mode') as 'menu' | 'tracker' | 'bill' | null;
+    const urlOrderId = searchParams.get('orderId');
     
     if (urlTableId && !tableId) {
       if (urlMode) {
         // If mode is provided in URL (from QR code), use it directly
-        console.log('Using mode from URL:', urlMode);
+        console.log('Using mode from URL:', urlMode, 'Order ID:', urlOrderId);
         setTableId(urlTableId);
         setMode(urlMode);
+        
+        // If tracker mode with orderId, show order tracker
+        if (urlMode === 'tracker' && urlOrderId) {
+          setCurrentOrderId(urlOrderId);
+          setShowOrderTracker(true);
+        }
         
         // Fetch table data for display
         const fetchTableData = async () => {
@@ -53,9 +60,14 @@ function RestaurantApp() {
             
             if (!error && tableInfo) {
               setTableData(tableInfo);
+              const modeLabels = {
+                menu: 'Menu Mode',
+                tracker: 'Order Tracker',
+                bill: 'Bill Mode'
+              };
               toast({
                 title: "Table Accessed",
-                description: `Table ${tableInfo.table_number} - ${urlMode === 'menu' ? 'Menu Mode' : 'Bill Mode'}`,
+                description: `Table ${tableInfo.table_number} - ${modeLabels[urlMode]}`,
               });
             }
           } catch (err) {
@@ -134,21 +146,38 @@ function RestaurantApp() {
         ?.filter(order => order.status !== 'completed' && order.status !== 'cancelled')
         .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()) || [];
       
-      // If there's an active order with status 'served', show bill
-      let mode: 'menu' | 'bill' = 'menu';
+      // Determine mode based on order status
+      let mode: 'menu' | 'tracker' | 'bill' = 'menu';
+      let orderId: string | null = null;
+      
       if (activeOrders.length > 0) {
         const latestOrder = activeOrders[0];
         if (latestOrder.status === 'served') {
           mode = 'bill';
+        } else {
+          mode = 'tracker';
+          orderId = latestOrder.id;
         }
       }
       
       setTableId(tableUuid);
       setMode(mode);
       
+      // If tracker mode, show order tracker
+      if (mode === 'tracker' && orderId) {
+        setCurrentOrderId(orderId);
+        setShowOrderTracker(true);
+      }
+      
+      const modeLabels = {
+        menu: 'Menu Mode',
+        tracker: 'Order Tracker',
+        bill: 'Bill Mode'
+      };
+      
       toast({
         title: "Table Accessed",
-        description: `Table ${tableInfo.table_number} - ${mode === 'menu' ? 'Menu Mode' : 'Bill Mode'}`,
+        description: `Table ${tableInfo.table_number} - ${modeLabels[mode]}`,
       });
     } catch (error) {
       console.error('Error determining mode:', error);
@@ -162,9 +191,15 @@ function RestaurantApp() {
 
 
 
-  const handleTableScanned = async (scannedTableUuid: string, scannedMode: 'menu' | 'bill') => {
+  const handleTableScanned = async (scannedTableUuid: string, scannedMode: 'menu' | 'tracker' | 'bill', orderId?: string) => {
     setTableId(scannedTableUuid);
     setMode(scannedMode);
+    
+    // If tracker mode with orderId, show order tracker
+    if (scannedMode === 'tracker' && orderId) {
+      setCurrentOrderId(orderId);
+      setShowOrderTracker(true);
+    }
     
     // Fetch table data for display
     try {
@@ -181,9 +216,15 @@ function RestaurantApp() {
       console.error('Error fetching table data:', err);
     }
     
+    const modeLabels = {
+      menu: 'Menu Mode',
+      tracker: 'Order Tracker',
+      bill: 'Bill Mode'
+    };
+    
     toast({
       title: "QR Code Scanned Successfully",
-      description: `Table ${tableData?.table_number || scannedTableUuid.slice(0, 8)} - ${scannedMode === 'menu' ? 'Menu Mode' : 'Bill Mode'}`,
+      description: `Table ${tableData?.table_number || scannedTableUuid.slice(0, 8)} - ${modeLabels[scannedMode]}`,
     });
   };
 
@@ -314,10 +355,40 @@ function RestaurantApp() {
   const handleOrderComplete = () => {
     setShowOrderTracker(false);
     setCurrentOrderId(null);
-    toast({
-      title: 'Order Complete!',
-      description: 'Thank you for dining with us. You can place a new order anytime.',
-    });
+    
+    // Check if we should switch to bill mode
+    if (tableId) {
+      const checkOrderStatus = async () => {
+        try {
+          const { data: orderData, error } = await supabase
+            .from('orders')
+            .select('*')
+            .eq('table_id', tableId)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .single();
+          
+          if (!error && orderData) {
+            if (orderData.status === 'served') {
+              setMode('bill');
+              toast({
+                title: 'Order Served!',
+                description: 'Your order has been served. You can now view your bill.',
+              });
+            } else if (orderData.status === 'completed') {
+              toast({
+                title: 'Order Complete!',
+                description: 'Thank you for dining with us. You can place a new order anytime.',
+              });
+            }
+          }
+        } catch (err) {
+          console.error('Error checking order status:', err);
+        }
+      };
+      
+      checkOrderStatus();
+    }
   };
 
     // Order Tracker View
