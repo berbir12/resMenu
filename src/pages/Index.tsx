@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { QRCodeScanner } from "@/components/QRCodeScanner";
 import MenuDisplay from "@/components/MenuDisplay";
 import BillDisplay from "@/components/BillDisplay";
+import OrderTracker from "@/components/OrderTracker";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import { ArrowLeft, CheckCircle } from "lucide-react";
@@ -15,6 +16,8 @@ function RestaurantApp() {
   const [tableData, setTableData] = useState<{id: string, table_number: number} | null>(null);
   const [searchParams] = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
+  const [currentOrderId, setCurrentOrderId] = useState<string | null>(null);
+  const [showOrderTracker, setShowOrderTracker] = useState(false);
 
   // Debug logging
   useEffect(() => {
@@ -255,7 +258,11 @@ function RestaurantApp() {
         waiter_called: false
       };
       
-      const { error } = await supabase.from('orders').insert([orderData]);
+      const { data: newOrder, error } = await supabase
+        .from('orders')
+        .insert([orderData])
+        .select()
+        .single();
       
       if (error) {
         if (error.code === '42P01') { // Table doesn't exist
@@ -273,10 +280,15 @@ function RestaurantApp() {
         }
       } else {
         toast({
-          title: 'Order Placed',
-          description: 'Your order has been sent to the kitchen!'
+          title: 'Order Placed Successfully!',
+          description: 'Your order has been sent to the kitchen. You can now track its progress.',
         });
-        // Stay in menu mode - bill will only show when order status is changed to "served"
+        
+        // Set the current order ID and show order tracker
+        setCurrentOrderId(newOrder.id);
+        setShowOrderTracker(true);
+        
+        // Reset the session but keep the table context
         resetSession();
       }
     } catch (err) {
@@ -289,12 +301,36 @@ function RestaurantApp() {
   };
 
   const goBack = () => {
-    if (mode) {
+    if (showOrderTracker) {
+      setShowOrderTracker(false);
+      setCurrentOrderId(null);
+    } else if (mode) {
       setMode(null);
       setTableId(null);
       setTableData(null);
     }
   };
+
+  const handleOrderComplete = () => {
+    setShowOrderTracker(false);
+    setCurrentOrderId(null);
+    toast({
+      title: 'Order Complete!',
+      description: 'Thank you for dining with us. You can place a new order anytime.',
+    });
+  };
+
+    // Order Tracker View
+  if (showOrderTracker && currentOrderId) {
+    return (
+      <OrderTracker
+        tableId={tableId!}
+        orderId={currentOrderId}
+        onGoBack={goBack}
+        onOrderComplete={handleOrderComplete}
+      />
+    );
+  }
 
   // Main QR Scanner View
   if (!tableId || !mode) {
@@ -309,7 +345,7 @@ function RestaurantApp() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-orange-600/60 to-transparent" />
                       <div className="absolute bottom-4 left-4 right-4 text-white text-center">
-              
+             
             </div>
         </div>
 
