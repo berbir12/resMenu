@@ -123,7 +123,12 @@ export type Database = {
           price: number;
           category: string | null;
           available: boolean;
+          image_url: string | null;
+          preparation_time: number | null;
+          dietary_info: string[] | null;
+          spicy_level: number;
           created_at: string;
+          updated_at: string;
         };
         Insert: {
           id?: number;
@@ -132,7 +137,12 @@ export type Database = {
           price: number;
           category?: string | null;
           available?: boolean;
+          image_url?: string | null;
+          preparation_time?: number | null;
+          dietary_info?: string[] | null;
+          spicy_level?: number;
           created_at?: string;
+          updated_at?: string;
         };
         Update: {
           id?: number;
@@ -141,7 +151,12 @@ export type Database = {
           price?: number;
           category?: string | null;
           available?: boolean;
+          image_url?: string | null;
+          preparation_time?: number | null;
+          dietary_info?: string[] | null;
+          spicy_level?: number;
           created_at?: string;
+          updated_at?: string;
         };
         Relationships: [];
       };
@@ -149,22 +164,25 @@ export type Database = {
         Row: {
           id: number;
           name: string;
-          contact: string;
-          operating_hours: string;
+          contact: string | null;
+          operating_hours: string | null;
+          created_at: string;
           updated_at: string;
         };
         Insert: {
           id?: number;
           name: string;
-          contact: string;
-          operating_hours: string;
+          contact?: string | null;
+          operating_hours?: string | null;
+          created_at?: string;
           updated_at?: string;
         };
         Update: {
           id?: number;
           name?: string;
-          contact?: string;
-          operating_hours?: string;
+          contact?: string | null;
+          operating_hours?: string | null;
+          created_at?: string;
           updated_at?: string;
         };
         Relationships: [];

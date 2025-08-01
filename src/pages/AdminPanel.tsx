@@ -880,18 +880,12 @@ const AdminPanel = () => {
                       </div>
                       <div>
                         <Label htmlFor="category">Category</Label>
-                        <Select value={newItem.category} onValueChange={(value) => setNewItem({...newItem, category: value})}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.map((category) => (
-                              <SelectItem key={category} value={category}>
-                                {category}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Input
+                          id="category"
+                          value={newItem.category}
+                          onChange={(e) => setNewItem({...newItem, category: e.target.value})}
+                          placeholder="Enter category (e.g., Main Course, Appetizer)"
+                        />
                       </div>
                     </div>
                     <div>
@@ -1465,18 +1459,12 @@ const AdminPanel = () => {
                 </div>
                 <div>
                   <Label htmlFor="edit-category">Category</Label>
-                  <Select value={editItem.category || ''} onValueChange={(value) => setEditItem({ ...editItem, category: value })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {categories.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Input
+                    id="edit-category"
+                    value={editItem.category || ''}
+                    onChange={(e) => setEditItem({ ...editItem, category: e.target.value })}
+                    placeholder="Enter category (e.g., Main Course, Appetizer)"
+                  />
                 </div>
               </div>
               <div>
