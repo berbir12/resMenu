@@ -433,6 +433,15 @@ const AdminPanel = () => {
   };
 
   const handleEditMenuItem = async () => {
+    if (!editItem || !editItem.id) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No item selected for editing."
+      });
+      return;
+    }
+    
     if (!editItem.name || !editItem.price) {
       toast({
         variant: "destructive",
@@ -441,6 +450,7 @@ const AdminPanel = () => {
       });
       return;
     }
+    
     if (!isAdmin) return;
     try {
       const { error } = await supabase.from('menu_items').update({
