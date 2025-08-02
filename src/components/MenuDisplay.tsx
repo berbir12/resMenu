@@ -2,9 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Minus, Phone, Clock, Leaf, Wheat, Flame, Search, Filter } from 'lucide-react';
+import { Plus, Minus, Phone, Clock, Leaf, Wheat, Flame, Search, Filter, Edit, X } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface MenuItem {
   id: number;
@@ -36,6 +37,7 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
   const [menuLoading, setMenuLoading] = useState(true);
   const [menuError, setMenuError] = useState<string | null>(null);
   const { orderItems, updateOrder } = useRestaurant();
+  const [editOrderDialogOpen, setEditOrderDialogOpen] = useState(false);
 
   // Dietary options with icons
   const dietaryOptions = [
@@ -239,6 +241,24 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
     }
   };
 
+  const updateOrderItemQuantity = (itemId: number, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      // Remove item from order
+      const updatedItems = orderItems.filter(item => item.id !== itemId);
+      updateOrder(updatedItems);
+    } else {
+      // Update item quantity
+      const updatedItems = orderItems.map(item => 
+        item.id === itemId ? { ...item, quantity: newQuantity } : item
+      );
+      updateOrder(updatedItems);
+    }
+  };
+
+  const getTotalAmount = () => {
+    return orderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  };
+
   const totalItems = orderItems.reduce((sum, item) => sum + item.quantity, 0);
 
   return (
@@ -430,6 +450,16 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
 
       {/* Action Buttons */}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2">
+        {orderItems.length > 0 && (
+          <Button 
+            onClick={() => setEditOrderDialogOpen(true)} 
+            variant="outline" 
+            className="rounded-full shadow-lg bg-white/90 backdrop-blur-sm hover:bg-white"
+          >
+            <Edit className="mr-2 h-4 w-4" />
+            Edit Order ({totalItems})
+          </Button>
+        )}
         <Button 
           onClick={callWaiter} 
           variant="outline" 
@@ -439,6 +469,92 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
           Call Waiter
         </Button>
       </div>
+
+      {/* Edit Order Dialog */}
+      <Dialog open={editOrderDialogOpen} onOpenChange={setEditOrderDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Your Order</DialogTitle>
+          </DialogHeader>
+          
+          {orderItems.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No items in your order</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {/* Current Order Items */}
+              <div>
+                <h3 className="text-lg font-semibold mb-4">Current Order Items</h3>
+                <div className="space-y-3">
+                  {orderItems.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-medium">{item.name}</p>
+                        <p className="text-sm text-muted-foreground">${item.price} each</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateOrderItemQuantity(item.id, item.quantity - 1)}
+                        >
+                          <Minus className="w-3 h-3" />
+                        </Button>
+                        <span className="w-8 text-center font-medium">{item.quantity}</span>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateOrderItemQuantity(item.id, item.quantity + 1)}
+                        >
+                          <Plus className="w-3 h-3" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => updateOrderItemQuantity(item.id, 0)}
+                          className="ml-2"
+                        >
+                          <X className="w-3 h-3" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {/* Total */}
+                <div className="border-t pt-4 mt-4">
+                  <div className="flex justify-between items-center">
+                    <p className="text-lg font-semibold">Total:</p>
+                    <p className="text-2xl font-bold text-orange-600">${getTotalAmount().toFixed(2)}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex justify-end gap-2 pt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => setEditOrderDialogOpen(false)}
+                >
+                  Close
+                </Button>
+                <Button
+                  onClick={() => {
+                    setEditOrderDialogOpen(false);
+                    toast({
+                      title: "Order Updated",
+                      description: "Your order has been updated successfully."
+                    });
+                  }}
+                >
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

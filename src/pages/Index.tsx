@@ -399,6 +399,10 @@ function RestaurantApp() {
         orderId={currentOrderId}
         onGoBack={goBack}
         onOrderComplete={handleOrderComplete}
+        onEditOrder={(orderId) => {
+          // This could be used for additional edit order functionality
+          console.log('Edit order requested for:', orderId);
+        }}
       />
     );
   }

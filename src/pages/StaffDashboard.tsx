@@ -3,14 +3,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { CheckCircle, Clock, Home, Loader2, RefreshCw, ChefHat, AlertTriangle, Edit, Plus, Minus, X } from "lucide-react";
+import { CheckCircle, Clock, Home, Loader2, RefreshCw, ChefHat, AlertTriangle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/integrations/supabase/types";
 import { useToast } from "@/hooks/use-toast";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+
 
 const StaffDashboard = () => {
   const [orders, setOrders] = useState<Database["public"]["Tables"]["orders"]["Row"][]>([]);
@@ -21,10 +19,7 @@ const StaffDashboard = () => {
   const [orderActionLoading, setOrderActionLoading] = useState<string | null>(null);
   const [autoRefresh, setAutoRefresh] = useState(true);
   const [showKDS, setShowKDS] = useState(false);
-  const [editOrderDialogOpen, setEditOrderDialogOpen] = useState(false);
-  const [editingOrder, setEditingOrder] = useState<any>(null);
-  const [menuItems, setMenuItems] = useState<any[]>([]);
-  const [editOrderItems, setEditOrderItems] = useState<any[]>([]);
+
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -70,7 +65,6 @@ const StaffDashboard = () => {
     const initialLoad = async () => {
       await fetchTables();
       await fetchOrders();
-      await fetchMenuItems();
     };
     
     initialLoad();
@@ -161,120 +155,7 @@ const StaffDashboard = () => {
     }
   };
 
-  const fetchMenuItems = async () => {
-    try {
-      const { data, error } = await supabase
-        .from("menu_items")
-        .select("*")
-        .eq("available", true)
-        .order("name");
-      
-      if (error) throw error;
-      setMenuItems(data || []);
-    } catch (error) {
-      console.error('Error fetching menu items:', error);
-    }
-  };
 
-  const openEditOrderDialog = (order: any) => {
-    let items: any[] = [];
-    
-    if (typeof order.items === 'string') {
-      try {
-        items = JSON.parse(order.items);
-      } catch {
-        items = [];
-      }
-    } else if (Array.isArray(order.items)) {
-      items = order.items;
-    } else if (order.items && typeof order.items === 'object') {
-      items = [order.items];
-    }
-    
-    if (!Array.isArray(items)) {
-      items = [];
-    }
-    
-    setEditingOrder(order);
-    setEditOrderItems([...items]);
-    setEditOrderDialogOpen(true);
-  };
-
-  const updateOrderItemQuantity = (index: number, newQuantity: number) => {
-    if (newQuantity <= 0) {
-      setEditOrderItems(prev => prev.filter((_, i) => i !== index));
-    } else {
-      setEditOrderItems(prev => prev.map((item, i) => 
-        i === index ? { ...item, quantity: newQuantity } : item
-      ));
-    }
-  };
-
-  const addMenuItemToOrder = (menuItem: any) => {
-    const existingIndex = editOrderItems.findIndex(item => item.id === menuItem.id);
-    
-    if (existingIndex >= 0) {
-      updateOrderItemQuantity(existingIndex, editOrderItems[existingIndex].quantity + 1);
-    } else {
-      setEditOrderItems(prev => [...prev, {
-        id: menuItem.id,
-        name: menuItem.name,
-        price: menuItem.price,
-        quantity: 1
-      }]);
-    }
-  };
-
-  const saveOrderChanges = async () => {
-    if (!editingOrder) return;
-    
-    setOrderActionLoading(editingOrder.id);
-    try {
-      const totalAmount = editOrderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-      
-      const { error } = await supabase
-        .from("orders")
-        .update({
-          items: editOrderItems,
-          total_amount: totalAmount
-        })
-        .eq("id", editingOrder.id);
-      
-      if (error) throw error;
-      
-      // Refresh orders
-      const { data } = await supabase
-        .from("orders")
-        .select("*")
-        .order("created_at", { ascending: false });
-      
-      if (data) {
-        const activeOrders = data.filter(order => order.status !== "completed");
-        const completedOrdersData = data.filter(order => order.status === "completed");
-        setOrders(activeOrders);
-        setCompletedOrders(completedOrdersData);
-      }
-      
-      setEditOrderDialogOpen(false);
-      setEditingOrder(null);
-      setEditOrderItems([]);
-      setOrderActionLoading(null);
-      
-      toast({
-        variant: "default",
-        title: "Order Updated",
-        description: "Order has been successfully updated."
-      });
-    } catch (error) {
-      console.error('Error updating order:', error);
-      setOrderActionLoading(null);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Failed to update order."
-      });
-    }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -422,17 +303,7 @@ const StaffDashboard = () => {
                     </CardHeader>
                     <CardContent>
                       {renderOrderItems(order)}
-                      <div className="mt-3 space-y-2">
-                        <Button
-                          size="sm"
-                          onClick={() => openEditOrderDialog(order)}
-                          variant="outline"
-                          className="w-full"
-                          disabled={orderActionLoading === order.id}
-                        >
-                          <Edit className="w-4 h-4 mr-2" />
-                          Edit Order
-                        </Button>
+                      <div className="mt-3">
                         <Button
                           size="sm"
                           onClick={() => updateOrderStatus(order.id, "preparing")}
@@ -480,17 +351,7 @@ const StaffDashboard = () => {
                   </CardHeader>
                   <CardContent>
                     {renderOrderItems(order)}
-                    <div className="mt-3 space-y-2">
-                      <Button
-                        size="sm"
-                        onClick={() => openEditOrderDialog(order)}
-                        variant="outline"
-                        className="w-full"
-                        disabled={orderActionLoading === order.id}
-                      >
-                        <Edit className="w-4 h-4 mr-2" />
-                        Edit Order
-                      </Button>
+                    <div className="mt-3">
                       <Button
                         size="sm"
                         onClick={() => updateOrderStatus(order.id, "ready")}
@@ -645,16 +506,7 @@ const StaffDashboard = () => {
                             {renderOrderItems(order)}
                           </div>
                           <div className="flex justify-end">
-                            <Button 
-                              size="sm" 
-                              onClick={() => openEditOrderDialog(order)}
-                              className="mr-2"
-                              variant="outline"
-                              disabled={orderActionLoading === order.id}
-                            >
-                              <Edit className="w-4 h-4 mr-2" />
-                              Edit Order
-                            </Button>
+
                             {order.status === 'pending' && (
                               <Button 
                                 size="sm" 
@@ -755,109 +607,7 @@ const StaffDashboard = () => {
           </TabsContent>
         </Tabs>
 
-        {/* Edit Order Dialog */}
-        <Dialog open={editOrderDialogOpen} onOpenChange={setEditOrderDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Edit Order #{editingOrder ? formatOrderId(editingOrder.id) : ''}</DialogTitle>
-            </DialogHeader>
-            
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Current Order Items */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Current Order Items</h3>
-                {editOrderItems.length === 0 ? (
-                  <p className="text-muted-foreground">No items in order</p>
-                ) : (
-                  <div className="space-y-3">
-                    {editOrderItems.map((item, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                        <div className="flex-1">
-                          <p className="font-medium">{item.name}</p>
-                          <p className="text-sm text-muted-foreground">${item.price} each</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateOrderItemQuantity(index, item.quantity - 1)}
-                          >
-                            <Minus className="w-3 h-3" />
-                          </Button>
-                          <span className="w-8 text-center font-medium">{item.quantity}</span>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateOrderItemQuantity(index, item.quantity + 1)}
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => updateOrderItemQuantity(index, 0)}
-                            className="ml-2"
-                          >
-                            <X className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                    <div className="border-t pt-3">
-                      <p className="text-lg font-bold">
-                        Total: ${editOrderItems.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </div>
 
-              {/* Available Menu Items */}
-              <div>
-                <h3 className="text-lg font-semibold mb-4">Add Menu Items</h3>
-                <div className="space-y-2 max-h-96 overflow-y-auto">
-                  {menuItems.map((menuItem) => (
-                    <div key={menuItem.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50">
-                      <div className="flex-1">
-                        <p className="font-medium">{menuItem.name}</p>
-                        <p className="text-sm text-muted-foreground">${menuItem.price}</p>
-                      </div>
-                      <Button
-                        size="sm"
-                        onClick={() => addMenuItemToOrder(menuItem)}
-                      >
-                        <Plus className="w-4 h-4 mr-2" />
-                        Add
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-2 mt-6">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setEditOrderDialogOpen(false);
-                  setEditingOrder(null);
-                  setEditOrderItems([]);
-                }}
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={saveOrderChanges}
-                disabled={orderActionLoading === editingOrder?.id}
-              >
-                {orderActionLoading === editingOrder?.id ? (
-                  <Loader2 className="animate-spin w-4 h-4 mr-2" />
-                ) : null}
-                Save Changes
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
       </div>
     </div>
   );
