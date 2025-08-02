@@ -292,17 +292,17 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
                 placeholder="Search for your favorite dishes..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent text-sm sm:text-base"
               />
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 overflow-x-auto pb-2 sm:pb-0">
               {categories.map((category) => (
                 <Button
                   key={category}
                   variant={selectedCategory === category ? "menu" : "outline"}
                   size="sm"
                   onClick={() => setSelectedCategory(category)}
-                  className="text-sm"
+                  className="text-xs sm:text-sm whitespace-nowrap flex-shrink-0"
                 >
                   {category}
                 </Button>
@@ -311,7 +311,7 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
           </div>
 
           {/* Menu Items */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
             {filteredMenu.length === 0 ? (
               <div className="col-span-full text-center py-12">
                 <div className="text-muted-foreground">
@@ -329,7 +329,7 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
                 <Card key={item.id} className="overflow-hidden hover:shadow-xl transition-all duration-300 border-0 bg-white/80 backdrop-blur-sm">
                   {/* Item Image */}
                   {item.image_url && (
-                    <div className="relative h-48 overflow-hidden">
+                    <div className="relative h-40 sm:h-48 overflow-hidden">
                       <img 
                         src={item.image_url} 
                         alt={item.name}
@@ -339,7 +339,7 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
                         }}
                       />
                       <div className="absolute top-2 right-2">
-                        <Badge className="bg-orange-600 text-white">
+                        <Badge className="bg-orange-600 text-white text-xs">
                           ${item.price}
                         </Badge>
                       </div>
@@ -348,20 +348,21 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
                   
                   <CardHeader className="pb-3">
                     <div className="flex justify-between items-start gap-3">
-                      <div className="flex-1">
-                        <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                          {item.name}
+                      <div className="flex-1 min-w-0">
+                        <CardTitle className="text-base sm:text-lg font-semibold text-gray-900 flex items-center gap-2 flex-wrap">
+                          <span className="truncate">{item.name}</span>
                           {item.spicy_level && item.spicy_level > 0 && (
                             <Badge 
-                              className={spicyLevels.find(l => l.value === item.spicy_level)?.color}
+                              className={`${spicyLevels.find(l => l.value === item.spicy_level)?.color} text-xs flex-shrink-0`}
                               variant="outline"
                             >
                               <Flame className="w-3 h-3 mr-1" />
-                              {spicyLevels.find(l => l.value === item.spicy_level)?.label}
+                              <span className="hidden sm:inline">{spicyLevels.find(l => l.value === item.spicy_level)?.label}</span>
+                              <span className="sm:hidden">{item.spicy_level}</span>
                             </Badge>
                           )}
                         </CardTitle>
-                        <CardDescription className="mt-2 text-gray-600 leading-relaxed">
+                        <CardDescription className="mt-2 text-gray-600 leading-relaxed text-sm line-clamp-2">
                           {item.description}
                         </CardDescription>
                         
@@ -373,9 +374,10 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
                               if (!option) return null;
                               const Icon = option.icon;
                               return (
-                                <Badge key={diet} className={option.color} variant="outline">
+                                <Badge key={diet} className={`${option.color} text-xs`} variant="outline">
                                   <Icon className="w-3 h-3 mr-1" />
-                                  {option.label}
+                                  <span className="hidden sm:inline">{option.label}</span>
+                                  <span className="sm:hidden">{option.label.split(' ')[0]}</span>
                                 </Badge>
                               );
                             })}
@@ -384,8 +386,8 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
                         
                         {/* Preparation Time */}
                         {item.preparation_time && (
-                          <div className="flex items-center gap-1 mt-2 text-sm text-muted-foreground">
-                            <Clock className="w-4 h-4" />
+                          <div className="flex items-center gap-1 mt-2 text-xs sm:text-sm text-muted-foreground">
+                            <Clock className="w-3 h-3 sm:w-4 sm:h-4" />
                             <span>{item.preparation_time} min</span>
                           </div>
                         )}
@@ -393,8 +395,8 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
                       
                       {/* Price (if no image) */}
                       {!item.image_url && (
-                        <div className="text-right">
-                          <p className="text-2xl font-bold text-orange-600">${item.price}</p>
+                        <div className="text-right flex-shrink-0">
+                          <p className="text-xl sm:text-2xl font-bold text-orange-600">${item.price}</p>
                         </div>
                       )}
                     </div>
@@ -415,27 +417,27 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
                           size="icon"
                           onClick={() => updateQuantity(item.id, -1)}
                           disabled={!orderItems.find(order => order.id === item.id)}
-                          className="h-8 w-8 rounded-full"
+                          className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
                         >
-                          <Minus className="h-4 w-4" />
+                          <Minus className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
-                        <span className="w-8 text-center font-medium text-lg">
+                        <span className="w-6 sm:w-8 text-center font-medium text-sm">
                           {orderItems.find(order => order.id === item.id)?.quantity || 0}
                         </span>
                         <Button
                           variant="outline"
                           size="icon"
                           onClick={() => updateQuantity(item.id, 1)}
-                          className="h-8 w-8 rounded-full"
+                          className="h-7 w-7 sm:h-8 sm:w-8 rounded-full"
                         >
-                          <Plus className="h-4 w-4" />
+                          <Plus className="h-3 w-3 sm:h-4 sm:w-4" />
                         </Button>
                       </div>
                       <Button
                         variant="fresh"
                         size="sm"
                         onClick={() => updateQuantity(item.id, 1)}
-                        className="rounded-full px-4"
+                        className="rounded-full px-3 sm:px-4 text-xs sm:text-sm"
                       >
                         Add to Order
                       </Button>
@@ -454,27 +456,29 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
           <Button 
             onClick={() => setEditOrderDialogOpen(true)} 
             variant="outline" 
-            className="rounded-full shadow-lg bg-white/90 backdrop-blur-sm hover:bg-white"
+            className="rounded-full shadow-lg bg-white/90 backdrop-blur-sm hover:bg-white text-xs sm:text-sm"
           >
-            <Edit className="mr-2 h-4 w-4" />
-            Edit Order ({totalItems})
+            <Edit className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="hidden sm:inline">Edit Order ({totalItems})</span>
+            <span className="sm:hidden">Edit ({totalItems})</span>
           </Button>
         )}
         <Button 
           onClick={callWaiter} 
           variant="outline" 
-          className="rounded-full shadow-lg bg-white/90 backdrop-blur-sm hover:bg-white"
+          className="rounded-full shadow-lg bg-white/90 backdrop-blur-sm hover:bg-white text-xs sm:text-sm"
         >
-          <Phone className="mr-2 h-4 w-4" />
-          Call Waiter
+          <Phone className="mr-1 sm:mr-2 h-3 w-3 sm:h-4 sm:w-4" />
+          <span className="hidden sm:inline">Call Waiter</span>
+          <span className="sm:hidden">Waiter</span>
         </Button>
       </div>
 
       {/* Edit Order Dialog */}
       <Dialog open={editOrderDialogOpen} onOpenChange={setEditOrderDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] sm:max-h-[80vh] overflow-y-auto w-[95vw] sm:w-auto">
           <DialogHeader>
-            <DialogTitle>Edit Your Order</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">Edit Your Order</DialogTitle>
           </DialogHeader>
           
           {orderItems.length === 0 ? (
@@ -485,27 +489,29 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
             <div className="space-y-4">
               {/* Current Order Items */}
               <div>
-                <h3 className="text-lg font-semibold mb-4">Current Order Items</h3>
-                <div className="space-y-3">
+                <h3 className="text-base sm:text-lg font-semibold mb-3 sm:mb-4">Current Order Items</h3>
+                <div className="space-y-2 sm:space-y-3">
                   {orderItems.map((item) => (
                     <div key={item.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div className="flex-1">
-                        <p className="font-medium">{item.name}</p>
-                        <p className="text-sm text-muted-foreground">${item.price} each</p>
+                      <div className="flex-1 min-w-0 mr-3">
+                        <p className="font-medium text-sm sm:text-base truncate">{item.name}</p>
+                        <p className="text-xs sm:text-sm text-muted-foreground">${item.price} each</p>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => updateOrderItemQuantity(item.id, item.quantity - 1)}
+                          className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                         >
                           <Minus className="w-3 h-3" />
                         </Button>
-                        <span className="w-8 text-center font-medium">{item.quantity}</span>
+                        <span className="w-6 sm:w-8 text-center font-medium text-sm">{item.quantity}</span>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => updateOrderItemQuantity(item.id, item.quantity + 1)}
+                          className="h-8 w-8 sm:h-9 sm:w-9 p-0"
                         >
                           <Plus className="w-3 h-3" />
                         </Button>
@@ -513,7 +519,7 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
                           size="sm"
                           variant="outline"
                           onClick={() => updateOrderItemQuantity(item.id, 0)}
-                          className="ml-2"
+                          className="h-8 w-8 sm:h-9 sm:w-9 p-0 ml-1 sm:ml-2"
                         >
                           <X className="w-3 h-3" />
                         </Button>
@@ -523,19 +529,20 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
                 </div>
                 
                 {/* Total */}
-                <div className="border-t pt-4 mt-4">
+                <div className="border-t pt-3 sm:pt-4 mt-3 sm:mt-4">
                   <div className="flex justify-between items-center">
-                    <p className="text-lg font-semibold">Total:</p>
-                    <p className="text-2xl font-bold text-orange-600">${getTotalAmount().toFixed(2)}</p>
+                    <p className="text-base sm:text-lg font-semibold">Total:</p>
+                    <p className="text-xl sm:text-2xl font-bold text-orange-600">${getTotalAmount().toFixed(2)}</p>
                   </div>
                 </div>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-end gap-2 pt-4">
+              <div className="flex flex-col sm:flex-row justify-end gap-2 pt-4">
                 <Button
                   variant="outline"
                   onClick={() => setEditOrderDialogOpen(false)}
+                  className="w-full sm:w-auto"
                 >
                   Close
                 </Button>
@@ -547,6 +554,7 @@ const MenuDisplay: React.FC<MenuDisplayProps> = ({ tableId, onOrderUpdate, onSen
                       description: "Your order has been updated successfully."
                     });
                   }}
+                  className="w-full sm:w-auto"
                 >
                   Save Changes
                 </Button>

@@ -412,20 +412,21 @@ function RestaurantApp() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100">
         {/* Hero Section */}
-        <div className="relative h-72 overflow-hidden"> {/* Increased height for better aspect ratio */}
+        <div className="relative h-60 sm:h-72 overflow-hidden"> {/* Responsive height */}
           <img 
             src={pastryHero} 
             alt="Pastry Hero" 
             className="w-full h-full object-cover object-center scale-95 transition-transform duration-300"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-orange-600/60 to-transparent" />
-                      <div className="absolute bottom-4 left-4 right-4 text-white text-center">
-             
-            </div>
+          <div className="absolute bottom-4 left-4 right-4 text-white text-center">
+            <h1 className="text-2xl sm:text-3xl font-bold mb-2">Welcome to CHANOLY NOODLE</h1>
+            <p className="text-sm sm:text-base opacity-90">Scan your table QR code to get started</p>
+          </div>
         </div>
 
         {/* QR Scanner */}
-        <div className="py-8">
+        <div className="py-6 sm:py-8 px-4">
           <QRCodeScanner onTableScanned={handleTableScanned} />
         </div>
       </div>
@@ -438,26 +439,31 @@ function RestaurantApp() {
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100">
         {/* Navigation */}
         <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-border z-10">
-          <div className="max-w-4xl mx-auto p-4 flex items-center justify-between">
-            <Button variant="outline" onClick={goBack} size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Scanner
+          <div className="max-w-4xl mx-auto p-3 sm:p-4 flex items-center justify-between">
+            <Button variant="outline" onClick={goBack} size="sm" className="text-xs sm:text-sm">
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Back to Scanner</span>
+              <span className="sm:hidden">Back</span>
             </Button>
-            <h2 className="font-semibold text-orange-600">Table {tableData?.table_number || tableId.slice(0, 8)} - Menu</h2>
+            <h2 className="font-semibold text-orange-600 text-sm sm:text-base text-center flex-1 mx-2">
+              Table {tableData?.table_number || tableId.slice(0, 8)} - Menu
+            </h2>
             <Button 
               variant="fresh" 
               size="sm"
               onClick={handleFinishOrder}
               disabled={orderItems.length === 0}
+              className="text-xs sm:text-sm"
             >
-              <CheckCircle className="w-4 h-4 mr-2" />
-              Send Order to Staff
+              <CheckCircle className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Send Order to Staff</span>
+              <span className="sm:hidden">Send Order</span>
             </Button>
           </div>
         </div>
 
         {/* Menu Content */}
-        <div className="py-8">
+        <div className="py-4 sm:py-8">
           <MenuDisplay 
             tableId={tableId} 
             onOrderUpdate={handleOrderUpdate} 
@@ -476,18 +482,21 @@ function RestaurantApp() {
       <div className="min-h-screen bg-gradient-to-br from-orange-50 to-orange-100">
         {/* Navigation */}
         <div className="sticky top-0 bg-white/95 backdrop-blur-sm border-b border-border z-10">
-          <div className="max-w-2xl mx-auto p-4 flex items-center justify-between">
-            <Button variant="outline" onClick={goBack} size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Scanner
+          <div className="max-w-2xl mx-auto p-3 sm:p-4 flex items-center justify-between">
+            <Button variant="outline" onClick={goBack} size="sm" className="text-xs sm:text-sm">
+              <ArrowLeft className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Back to Scanner</span>
+              <span className="sm:hidden">Back</span>
             </Button>
-            <h2 className="font-semibold text-orange-600">Table {tableData?.table_number || tableId.slice(0, 8)} - Bill</h2>
-            <div /> {/* Spacer for center alignment */}
+            <h2 className="font-semibold text-orange-600 text-sm sm:text-base text-center flex-1 mx-2">
+              Table {tableData?.table_number || tableId.slice(0, 8)} - Bill
+            </h2>
+            <div className="w-16 sm:w-20" /> {/* Spacer for center alignment */}
           </div>
         </div>
 
         {/* Bill Content */}
-        <div className="py-8">
+        <div className="py-4 sm:py-8">
           <BillDisplay 
             tableId={tableId} 
             items={billItems}
