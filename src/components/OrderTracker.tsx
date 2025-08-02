@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { Clock, CheckCircle, ChefHat, Utensils, Receipt, ArrowLeft, Edit, Plus, Minus, X } from 'lucide-react';
+import { Clock, CheckCircle, ChefHat, Utensils, Receipt, ArrowLeft, Edit, Plus, Minus, X, Bell } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
@@ -44,6 +44,8 @@ const OrderTracker = ({ tableId, orderId, onGoBack, onOrderComplete, onEditOrder
   const [editOrderDialogOpen, setEditOrderDialogOpen] = useState(false);
   const [editedItems, setEditedItems] = useState<OrderItem[]>([]);
   const [isUpdatingOrder, setIsUpdatingOrder] = useState(false);
+  const [previousStatus, setPreviousStatus] = useState<string | null>(null);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
 
   // Order status configuration
   const orderSteps = [
@@ -53,6 +55,19 @@ const OrderTracker = ({ tableId, orderId, onGoBack, onOrderComplete, onEditOrder
     { status: 'served', label: 'Served', icon: CheckCircle, color: 'bg-purple-500' },
     { status: 'completed', label: 'Completed', icon: CheckCircle, color: 'bg-gray-500' }
   ];
+
+  // Request notification permission on component mount
+  useEffect(() => {
+    if ('Notification' in window) {
+      if (Notification.permission === 'default') {
+        Notification.requestPermission().then(permission => {
+          setNotificationPermission(permission);
+        });
+      } else {
+        setNotificationPermission(Notification.permission);
+      }
+    }
+  }, []);
 
   const getCurrentStepIndex = () => {
     if (!order) return 0;
@@ -83,6 +98,52 @@ const OrderTracker = ({ tableId, orderId, onGoBack, onOrderComplete, onEditOrder
     }
   };
 
+  // Enhanced notification function
+  const sendNotification = (title: string, message: string, status: string) => {
+    // Browser notification
+    if ('Notification' in window && notificationPermission === 'granted') {
+      const notification = new Notification(title, {
+        body: message,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico',
+        tag: 'order-update',
+        requireInteraction: status === 'ready' || status === 'served',
+        silent: false
+      });
+
+      // Auto-close notification after 5 seconds (except for important statuses)
+      if (status !== 'ready' && status !== 'served') {
+        setTimeout(() => {
+          notification.close();
+        }, 5000);
+      }
+
+      // Handle notification click
+      notification.onclick = () => {
+        window.focus();
+        notification.close();
+      };
+    }
+
+    // Toast notification
+    toast({
+      title: title,
+      description: message,
+      duration: status === 'ready' || status === 'served' ? 10000 : 5000,
+    });
+
+    // Play notification sound (if supported)
+    try {
+      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSuBzvLZiTYIG2m98OScTgwOUarm7blmGgU7k9n1unEiBC13yO/eizEIHWq+8+OWT');
+      audio.volume = 0.3;
+      audio.play().catch(() => {
+        // Ignore errors if audio fails to play
+      });
+    } catch (error) {
+      // Ignore audio errors
+    }
+  };
+
   const fetchOrder = async () => {
     try {
       const { data, error } = await supabase
@@ -102,6 +163,7 @@ const OrderTracker = ({ tableId, orderId, onGoBack, onOrderComplete, onEditOrder
       }
 
       setOrder(data as any);
+      setPreviousStatus(data.status);
       
       // Parse order items for editing
       try {
@@ -112,19 +174,19 @@ const OrderTracker = ({ tableId, orderId, onGoBack, onOrderComplete, onEditOrder
         setEditedItems([]);
       }
       
-             // If order is completed, trigger completion callback
-       if (data.status === 'completed') {
-         setTimeout(() => {
-           onOrderComplete();
-         }, 3000);
-       }
-       
-       // If order is served, redirect to bill mode after a delay
-       if (data.status === 'served') {
-         setTimeout(() => {
-           onOrderComplete();
-         }, 2000);
-       }
+      // If order is completed, trigger completion callback
+      if (data.status === 'completed') {
+        setTimeout(() => {
+          onOrderComplete();
+        }, 3000);
+      }
+      
+      // If order is served, redirect to bill mode after a delay
+      if (data.status === 'served') {
+        setTimeout(() => {
+          onOrderComplete();
+        }, 2000);
+      }
     } catch (err) {
       console.error('Error fetching order:', err);
     } finally {
@@ -147,23 +209,42 @@ const OrderTracker = ({ tableId, orderId, onGoBack, onOrderComplete, onEditOrder
         }, 
         (payload) => {
           console.log('Order updated:', payload.new);
-          setOrder(payload.new as any);
-          
-          // Show notification for status changes
           const newStatus = payload.new.status;
-          const statusLabels = {
-            'preparing': 'Your order is being prepared!',
-            'ready': 'Your order is ready!',
-            'served': 'Your order has been served!',
-            'completed': 'Thank you for dining with us!'
-          };
           
-          if (statusLabels[newStatus as keyof typeof statusLabels]) {
-            toast({
-              title: 'Order Update',
-              description: statusLabels[newStatus as keyof typeof statusLabels]
-            });
+          // Check if status actually changed
+          if (previousStatus && previousStatus !== newStatus) {
+            // Enhanced status change notifications
+            const statusConfig = {
+              'preparing': {
+                title: '🍳 Order Update',
+                message: 'Your order is being prepared! Our chefs are working on your delicious meal.',
+                priority: 'medium'
+              },
+              'ready': {
+                title: '🎉 Order Ready!',
+                message: 'Your order is ready for pickup! Please wait for service.',
+                priority: 'high'
+              },
+              'served': {
+                title: '🍽️ Order Served!',
+                message: 'Your order has been served. Enjoy your meal!',
+                priority: 'high'
+              },
+              'completed': {
+                title: '✅ Order Complete',
+                message: 'Thank you for dining with us! We hope you enjoyed your meal.',
+                priority: 'medium'
+              }
+            };
+
+            const config = statusConfig[newStatus as keyof typeof statusConfig];
+            if (config) {
+              sendNotification(config.title, config.message, newStatus);
+            }
           }
+          
+          setOrder(payload.new as any);
+          setPreviousStatus(newStatus);
           
           // If order status changes to ready or beyond, close edit dialog if open
           if ((newStatus === 'ready' || newStatus === 'served' || newStatus === 'completed') && editOrderDialogOpen) {
@@ -181,7 +262,7 @@ const OrderTracker = ({ tableId, orderId, onGoBack, onOrderComplete, onEditOrder
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [orderId]);
+  }, [orderId, previousStatus]);
 
   // Update elapsed time every minute
   useEffect(() => {
@@ -274,6 +355,20 @@ const OrderTracker = ({ tableId, orderId, onGoBack, onOrderComplete, onEditOrder
     return order.status === 'pending' || order.status === 'preparing';
   };
 
+  const requestNotificationPermission = () => {
+    if ('Notification' in window && notificationPermission === 'default') {
+      Notification.requestPermission().then(permission => {
+        setNotificationPermission(permission);
+        if (permission === 'granted') {
+          toast({
+            title: 'Notifications Enabled',
+            description: 'You will now receive real-time updates about your order!'
+          });
+        }
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-orange-50 to-orange-100">
@@ -318,6 +413,28 @@ const OrderTracker = ({ tableId, orderId, onGoBack, onOrderComplete, onEditOrder
           </div>
         </div>
       </div>
+
+      {/* Notification Permission Banner */}
+      {notificationPermission === 'default' && (
+        <div className="bg-blue-50 border-b border-blue-200 px-4 py-3">
+          <div className="max-w-2xl mx-auto flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Bell className="w-5 h-5 text-blue-600" />
+              <div>
+                <p className="text-sm font-medium text-blue-900">Enable Notifications</p>
+                <p className="text-xs text-blue-700">Get real-time updates about your order</p>
+              </div>
+            </div>
+            <Button 
+              size="sm" 
+              onClick={requestNotificationPermission}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              Enable
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Order Status */}
       <div className="py-4 sm:py-8">
